@@ -2,8 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from tsetlinMachine import TsetlinMachine
 from sklearn.metrics import f1_score, precision_score, recall_score
+from tsetlinMachine import TsetlinMachine
+import math
+import scipy.stats as stats
 
 # Load the iris dataset
 iris = load_iris()
@@ -25,11 +27,10 @@ test_accs = []
 for epoch in range(epochs):
     np.random.shuffle(X_train)
     np.random.shuffle(y_train)
-
     for example_id in range(len(X_train)):
         target_class = y_train[example_id]
         Xi = X_train[example_id, :].astype(np.int32)
-        tm.update(Xi, target_class)
+        tm.update(Xi, target_class, alpha)
 
 # Calculate train and test accuracies
 train_acc = tm.evaluate(X_train, y_train, len(X_train))
@@ -43,3 +44,4 @@ precision = precision_score(y_test, y_pred, average='weighted')
 recall = recall_score(y_test, y_pred, average='weighted')
 
 print(f"F1 score: {f1:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}")
+
