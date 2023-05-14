@@ -4,7 +4,9 @@ from sklearn.datasets import fetch_openml
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from tsetlinMachine import TsetlinMachine
+from tsetlinMachine import TsetlinMachine
 import cv2
+
 
 # Load MNIST dataset
 mnist = fetch_openml('mnist_784')
@@ -28,7 +30,8 @@ threshold = 2
 
 tm = TsetlinMachine(number_of_clauses, number_of_features, number_of_states, s, threshold)
 epochs = 500
-tm.fit(X_train, y_train, number_of_examples, epochs)
+alpha = tm.calculate_equation(s, decay_rate, epoch)
+tm.fit(X_train, y_train, number_of_examples, epochs, alpha)
 
 # Test the Tsetlin Machine and calculate performance metrics
 y_pred_train = np.array([tm.predict(X_train[i]) for i in range(X_train.shape[0])])
