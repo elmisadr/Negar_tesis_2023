@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import scipy.stats as stats
+import math
 
 class TsetlinMachine:
     def __init__(self, number_of_clauses, number_of_features, number_of_states, s, threshold):
@@ -83,7 +85,7 @@ class TsetlinMachine:
         return 1.0 - 1.0 * errors / number_of_examples
     
 
-    def update(self, X, y):
+    def update(self, X, y,alpha):
         self.calculate_clause_output(X)
         output_sum = self.sum_up_clause_votes()
 
@@ -124,63 +126,65 @@ class TsetlinMachine:
                 for epoch in range(epochs):
 
                     sigma_e = initial_stddev * np.exp(-decay_rate * epoch)
-           
-                    p_1 = (self.s - 1) / self.s + np.random.normal(0, sigma_e)
-                    p_2 = 1 / self.s + np.random.normal(0, sigma_e)
+                 
+                    def calculate_equation(s, d, e_i):
+                        argument = -(s - 2) / s / math.sqrt(2 * math.exp(-2 * decay_rate * epoch))
+                        alpha = 1 - stats.norm.cdf(argument)
+                        return alpha
 
                     if self.clause_output[j] == 0:
                     
                         for k in range(self.number_of_features):
                             if X[k] == 1:
-                                if p_1 > p_2:
+                                if alpha > 0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
-                                            self.ta_state[j, k, 1] -= (self.s-1)^2
+                                            self.ta_state[j, k, 1] -= math.floor((self.s-1)*(1-alpha)/alpha)
                                         if self.ta_state[j, k, 0] > 1:
                                             self.ta_state[j, k, 0] -= (self.s-1)
         
-                                elif p_1 < p_2:
+                                elif alpha < 0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
                                             self.ta_state[j, k, 1] += (self.s-1)
                                         if self.ta_state[j, k, 0] > 1:
-                                            self.ta_state[j, k, 0] += (self.s-1)^2
+                                            self.ta_state[j, k, 0] += math.floor((self.s-1)*alpha/(1-alpha))
 
                             elif X[k] == 0:
-                                if p_1 > p_2:
+                                if alpha > 0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
-                                            self.ta_state[j, k, 1] -= (self.s-1)^2
+                                            self.ta_state[j, k, 1] -= math.floor((self.s-1)*(1-alpha)/alpha)
                                         if self.ta_state[j, k, 0] > 1:
                                             self.ta_state[j, k, 0] -= (self.s-1)
         
-                                elif p_1 < p_2:
+                                elif alpha<=0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
                                             self.ta_state[j, k, 1] += (self.s-1)
                                         if self.ta_state[j, k, 0] > 1:
-                                            self.ta_state[j, k, 0] += (self.s-1)^2
+                                            self.ta_state[j, k, 0] +=math.floor((self.s-1)*alpha/(1-alpha))
 
                     if self.clause_output[j] == 1:
                             for k in range(self.number_of_features):
                                 if X[k] == 1:
-                                    if p_1 > p_2:
+                                    if alpha > 0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
                                             self.ta_state[j, k, 1] += (self.s-1)
                                         if self.ta_state[j, k, 0] > 1:
-                                            self.ta_state[j, k, 0] += (self.s-1)^2
+                                            self.ta_state[j, k, 0] += math.floor((self.s-1)*(1-alpha)/alpha)
         
-                                    elif p_1 < p_2:
+                                    elif alpha<=0.5:
                                         if self.ta_state[j, k, 1] < self.number_of_states * 2:
-                                            self.ta_state[j, k, 1] -= (self.s-1)^2
+                                            self.ta_state[j, k, 1] -= math.floor((self.s-1)*alpha/(1-alpha))
                                         if self.ta_state[j, k, 0] > 1:
                                             self.ta_state[j, k, 0] -= (self.s-1)
 
  
                                 elif X[k] == 0:
-                                    if p_1 > p_2:
+                                    if alpha > 0.5:
                                         if self.ta_state[j, k, 0] > 1:
                                             self.ta_state[j, k, 0] -= (self.s-1)
                                         
-                                    elif p_1 < p_2:
+                                    elif alpha<=0.5:
                                         if self.ta_state[j, k, 0] > 1:
-                                            self.ta_state[j, k, 0] += (self.s-1)^2
+                                            self.ta_state[j, k, 0] +=math.floor((self.s-1)*alpha/(1-alpha))
  
             elif self.feedback_to_clauses[j] < 0:                             
                                         
@@ -198,13 +202,15 @@ class TsetlinMachine:
                                                    self.ta_state[j,k,1] += 1
 
 
-    def fit(self, X: np.ndarray, y: np.ndarray, number_of_examples: int, epochs: int = 100):
+    def fit(self, X: np.ndarray, y: np.ndarray, number_of_examples: int, epochs: int):
         for epoch in range(epochs):
+
             np.random.shuffle(X)
             np.random.shuffle(y)
-
             for example_id in range(number_of_examples):
                 target_class = y[example_id]
 
                 Xi = X[example_id, :].astype(np.int32)
                 self.update(Xi, target_class)
+               
+                
